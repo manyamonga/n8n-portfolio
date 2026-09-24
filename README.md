@@ -107,4 +107,4 @@ n8n · Google Gemini · JavaScript · RSS · SMTP
 
 ---
 
-Built by **Manya Monga** as part of my n8n and AI automation learning journey. [Connect on LinkedIn](https://www.linkedin.com/in/your-profile)
+Built by **Manya Monga** as part of my n8n and AI automation learning journey. [Connect on LinkedIn](https://www.linkedin.com/in/manya-monga-39ab1a374?utm_source=share_via&utm_content=profile&utm_medium=member_ios)
