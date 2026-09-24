@@ -19,4 +19,4 @@ Each folder contains the exported workflow JSON, a README explaining how it work
 
 ---
 
-**Manya Monga** · [LinkedIn](https://www.linkedin.com/in/your-profile)
+**Manya Monga** · [LinkedIn](https://www.linkedin.com/in/manya-monga-39ab1a374?utm_source=share_via&utm_content=profile&utm_medium=member_ios)
