@@ -1,0 +1,67 @@
+{
+  "name": "Error Alert",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1a57b618-7791-44b9-9ade-84d344d0a4db",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "fromEmail": "you@example.com",
+        "toEmail": "you@example.com",
+        "subject": "=⚠️ Workflow failed: {{ $json.workflow.name }}",
+        "html": "=   <h3>⚠️ n8n workflow failed</h3>\n   <p><b>Workflow:</b> {{ $json.workflow.name }}</p>\n   <p><b>Failed at node:</b> {{ $json.execution.lastNodeExecuted }}</p>\n   <p><b>Error:</b> {{ $json.execution.error.message }}</p>\n   <p><b>Time:</b> {{ $now.toFormat('dd MMM yyyy, hh:mm a') }}</p>\n   <p><a href=\"{{ $json.execution.url }}\">Open the failed execution</a></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "7b9cc08f-0464-4383-9af9-afb5e9badd0e",
+      "name": "Send an Email",
+      "webhookId": "d043aa67-c322-4b3c-b761-0aa85900bf33",
+      "credentials": {
+        "smtp": {
+          "id": "EjzKB1vy1cRp0C1w",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0cd84bd3-f57c-4dd3-b52c-923c768da848",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "01e13b29066b877e6fe71c69befa3360f61aecbd352e86e0fd44e77c7db6c3b1"
+  },
+  "id": "cnaEF6JOPWJ9XAqZ",
+  "tags": []
+}

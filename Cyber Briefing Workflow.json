@@ -1,0 +1,390 @@
+{
+  "name": "Cyber Briefing Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://feeds.feedburner.com/TheHackersNews",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "990dd321-1bde-4208-a452-2e9bf3f29712",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "c1cd2d57-8629-491f-8ee0-9c08a630c492",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Severity ranking and colors\nconst severityOrder = { Critical: 0, High: 1, Medium: 2, Low: 3 };\nconst badge = {\n  Critical: { emoji: '🔴', color: '#d93025', bg: '#fce8e6' },\n  High:     { emoji: '🟠', color: '#e8710a', bg: '#fef0e0' },\n  Medium:   { emoji: '🟡', color: '#b58100', bg: '#fef7d6' },\n  Low:      { emoji: '🟢', color: '#188038', bg: '#e6f4ea' },\n};\n\n// 2. Get articles and sort: most severe first\nconst articles = $input.all()\n  .map((item) => item.json)\n  .sort((x, y) =>\n    (severityOrder[x.output?.severity] ?? 9) - (severityOrder[y.output?.severity] ?? 9)\n  );\n\n// 3. Count stories per severity for the header line\nconst counts = {};\nfor (const a of articles) {\n  const s = a.output?.severity || 'Unknown';\n  counts[s] = (counts[s] || 0) + 1;\n}\nconst countLine = Object.keys(severityOrder)\n  .filter((s) => counts[s])\n  .map((s) => `${badge[s].emoji} ${counts[s]} ${s}`)\n  .join(' &nbsp;·&nbsp; ');\n\n// 4. Build one card per article\nconst cards = articles.map((a) => {\n  const ai = a.output || {};\n  const b = badge[ai.severity] || { emoji: '⚪', color: '#5f6368', bg: '#f1f3f4' };\n  const date = new Date(a.isoDate || a.pubDate).toDateString();\n  const image = a.enclosure?.url\n    ? `<img src=\"${a.enclosure.url}\" style=\"width:100%;max-width:560px;border-radius:8px;margin-bottom:10px\">`\n    : '';\n\n  return `\n  <div style=\"border:1px solid #e0e0e0;border-left:5px solid ${b.color};border-radius:8px;padding:16px;margin-bottom:18px\">\n    ${image}\n    <span style=\"background:${b.bg};color:${b.color};font-weight:bold;font-size:12px;padding:3px 10px;border-radius:12px\">${b.emoji} ${ai.severity || 'Unrated'}</span>\n    <span style=\"background:#f1f3f4;color:#3c4043;font-size:12px;padding:3px 10px;border-radius:12px;margin-left:6px\">${ai.category || 'Other'}</span>\n    <h3 style=\"margin:10px 0 6px;font-size:17px\">\n      <a href=\"${a.link}\" style=\"color:#1a0dab;text-decoration:none\">${a.title}</a>\n    </h3>\n    <p style=\"margin:0 0 6px;color:#202124\">💡 ${ai.summary || ''}</p>\n    <small style=\"color:#70757a\">${date}</small>\n  </div>`;\n});\n\n// 5. Put the full email together\nconst html = `\n<div style=\"font-family:Arial,sans-serif;max-width:600px;margin:auto\">\n  <h2 style=\"margin-bottom:4px\">🛡️ AI Cybersecurity Briefing</h2>\n  <p style=\"color:#5f6368;margin-top:0\">${new Date().toDateString()} &nbsp;|&nbsp; ${countLine}</p>\n  ${cards.join('')}\n  <p style=\"color:#9aa0a6;font-size:12px;text-align:center\">Analyzed by Gemini · Automated with n8n</p>\n</div>`;\n\nreturn [{\n  json: {\n    subject: `🛡️ Cyber Briefing — ${new Date().toDateString()}${counts.Critical ? ` · ${counts.Critical} Critical` : ''}`,\n    html,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        16
+      ],
+      "id": "9693d9ed-767f-4f1b-a5ba-55347392a609",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "fromEmail": "you@example.com",
+        "toEmail": "you@example.com",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1680,
+        16
+      ],
+      "id": "dcfad3f0-9a96-4ab8-aa88-4ec397f07276",
+      "name": "Send an Email",
+      "webhookId": "2cf6f941-ca4f-4c28-866d-0007e1f2aa41",
+      "credentials": {
+        "smtp": {
+          "id": "EjzKB1vy1cRp0C1w",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c4807712-6e56-4c0a-b429-43f545fd643d",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.link }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "2dca4d38-7720-4c61-aef2-92d6cbe27d59",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this cybersecurity news article.\n\nTitle: {{ $json.title }}\nDetails: {{ $json.contentSnippet }}\n\nReturn:\n- summary: ONE sentence (max 25 words) explaining why this matters and who is affected.\n- severity: exactly one of Critical, High, Medium, Low\n  (Critical = actively exploited or CVSS 9+; High = serious flaw or major breach, not yet exploited; Medium = limited impact or niche target; Low = research, policy or general news)\n- category: exactly one of Vulnerability, Malware, Data Breach, Phishing, AI Security, Policy, Other",
+        "hasOutputParser": true,
+        "needsFallback": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        816,
+        0
+      ],
+      "id": "9590de78-4df1-4fcd-91d0-62efab8a139b",
+      "name": "Basic LLM Chain",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        672,
+        224
+      ],
+      "id": "78401ea0-0cc3-4834-9a3a-0d8375508cae",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "WK845VV53owblSOQ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"summary\": \"One sentence explaining why this matters.\",\n  \"severity\": \"Critical\",\n  \"category\": \"Vulnerability\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        240
+      ],
+      "id": "1ea5a38e-1cc6-43bb-b9bf-3ff7ea8ce8ab",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.6-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        864,
+        240
+      ],
+      "id": "b8ceff03-33bd-4c31-a1d7-7603ebc40d91",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "WK845VV53owblSOQ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1200,
+        16
+      ],
+      "id": "e6e6e08b-85e6-4e5e-95a8-95198be2144a",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "content": "# AI Cybersecurity Briefing\nEvery morning at 9 AM, fetches the latest cybersecurity news,\nuses Gemini AI to summarize and rate each story's severity,\nand emails a prioritized briefing.",
+        "height": 224,
+        "width": 304,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        -320
+      ],
+      "id": "308caad4-1989-401c-ac42-e9699726fce6",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# 1. Fetch new articles\nRSS feed → skip articles already sent → keep the 5 newest",
+        "height": 96,
+        "width": 432,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        256,
+        -128
+      ],
+      "id": "976f1d9d-4339-4659-835c-bec1a0f844f9",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# 2. AI analysis\nGemini returns summary + severity + category as JSON.\nRetry on fail + fallback model for reliability.\nMerge joins each article with its analysis.",
+        "height": 128,
+        "width": 400,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -160
+      ],
+      "id": "792899b4-47d5-437d-8bce-42c0880946aa",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# 3. Format & send\nSort by severity → color-coded HTML cards → email",
+        "height": 96,
+        "width": 384,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        176
+      ],
+      "id": "5cd4c9ae-096f-453f-94c8-1610aa9d33a7",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "cnaEF6JOPWJ9XAqZ",
+    "executionTimeout": -1
+  },
+  "versionId": "fe867640-4cf5-4aa4-96a8-06289582c22a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "01e13b29066b877e6fe71c69befa3360f61aecbd352e86e0fd44e77c7db6c3b1"
+  },
+  "id": "ISGDky7GsyUhOlwf",
+  "tags": []
+}
