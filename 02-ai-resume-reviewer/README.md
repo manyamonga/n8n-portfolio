@@ -12,10 +12,6 @@ An n8n workflow that turns a simple web form into an AI resume coach. Anyone can
 4. JavaScript turns the review into a formatted HTML report with a color-coded score
 5. The report is emailed to the person who submitted the form
 
-| The form | The emailed report |
-|---|---|
-| ![Form](assets/form.png) | ![Email report](assets/email.png) |
-
 ## Architecture
 
 ```mermaid

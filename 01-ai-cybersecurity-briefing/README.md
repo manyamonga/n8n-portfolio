@@ -17,8 +17,6 @@ Every day at 9 AM, the workflow:
 4. Sorts stories by severity and builds an HTML email with color-coded cards
 5. Emails the briefing, with a subject line that flags critical stories
 
-![Email briefing](assets/email.png)
-
 ## Architecture
 
 ```mermaid
@@ -107,4 +105,4 @@ n8n · Google Gemini · JavaScript · RSS · SMTP
 
 ---
 
-Built by **Manya Monga** as part of my n8n and AI automation learning journey. [Connect on LinkedIn](https://www.linkedin.com/in/manya-monga-39ab1a374?utm_source=share_via&utm_content=profile&utm_medium=member_ios)
+Built by **Manya Monga** as part of my n8n and AI automation learning journey. [Connect on LinkedIn](https://www.linkedin.com/in/manya-monga-39ab1a374)
